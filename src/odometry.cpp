@@ -1,32 +1,28 @@
-#include "odometry.h"
-#include <cmath>
-#include <ctime>
-#include <iterator>
-#include <numeric>
-
-using namespace std;
-
-Odometry::Odometry(double wheel_radius, double rpm)
-    : radius(wheel_radius), rpm(rpm) {
-  // Linear velocity (m/s) =(wheel circumference * revolutions per second)
-  double rps = rpm / 60.0;
-  linear_vel = 2 * M_PI * radius * rps;
-}
-
-double Odometry::distance(int x1, int y1, int x2, int y2) {
-  return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-}
-
-double Odometry::angle(int x1, int y1, int x2, int y2) {
-  // atan2 returns radians, convert to degrees
-  return atan2(y2 - y1, x2 - x1) * 180.0 / M_PI;
-}
-
 MotionCommand Odometry::computeCommands(vector<pair<int, int>> &path) {
+    MotionCommand res = {0.0, 0.0}; // total time (sec), final orientation (deg)
 
-  MotionCommand res = {0.0, 0.0}; // store total time and angle traversed
+    if (path.size() < 2)
+        return res; // no movement if path is empty or has only one point
 
- /* Implement you odometry logic here */ 
+    double total_time = 0.0;
+    double last_angle = 0.0;
 
-  return res;
+    for (size_t i = 0; i < path.size() - 1; i++) {
+        int x1 = path[i].first, y1 = path[i].second;
+        int x2 = path[i + 1].first, y2 = path[i + 1].second;
+
+        // 1. Distance between consecutive points
+        double d = distance(x1, y1, x2, y2);
+
+        // 2. Time = distance / linear velocity
+        double t = d / linear_vel;
+        total_time += t;
+
+        // 3. Orientation (angle to next point)
+        last_angle = angle(x1, y1, x2, y2);
+    }
+
+    res.time_sec = total_time;
+    res.angle_deg = last_angle; // final orientation after completing path
+    return res;
 }

@@ -53,14 +53,54 @@ If you are able to compile your code successfully you should see something like 
 # Solution
 ## Understanding
 Describe what you understood about the problem.
+The task is to make a rover navigate from a start GPS position to a goal GPS position using data from a u-blox GNSS module.
+The workflow involves three main parts:
+Decoding UBX GPS data: Parsing the binary .ubx file to extract latitude and longitude in usable floating-point values.
+Path Planning: Mapping start and goal positions onto a predefined grid and finding an optimal route (using A* algorithm) while avoiding obstacles.
+Odometry Commands: Translating the planned path into motion commands (time and angle) that the rover can follow, considering its wheel parameters.
+Finally, the code must be compiled and tested to ensure correctness.
 
 ## Thought Process
 After understanding the problem, describe how you decided to proceed towards solving the question.
+My approach was to divide the problem into modular tasks:
+GPS decoding (Task 1):
+Study the UBX protocol (NAV-POSLLH message structure).
+Extract fields like latitude, longitude, and convert them to degrees.
+Ensure checksum validation so that only correct UBX messages are used.
+
+Path Planning (Task 2):
+Represent the map as a 2D grid.
+Convert lat/long coordinates into grid indices (row, col).
+Use the A* algorithm to search for the shortest path from start to goal.
+Store the path as a sequence of grid cells.
+
+Odometry (Task 3):
+Calculate the distance and heading change between consecutive path points.
+Use robot parameters (wheel radius, base length, speed) to compute total traversal time and rotation angle.
+Output odometry commands (time, angle).
+
+Testing (Task 4):
+Compile the project with make build.
+Run with test UBX inputs to verify correct GPS parsing.
+Use make check to validate correctness with the provided test framework.
+This step-wise approach ensured that each component could be debugged independently before integration.
 
 ## Implementation
 How did you decide to implement your solution.
-
 Mention the details, such as the path planning & odometry how you tested it.
+
+GPS Decoder (ublox_reader.cpp):
+Implemented readUbloxFile to open the UBX file, validate UBX sync bytes, extract the NAV-POSLLH payload, and compute latitude/longitude in decimal degrees. This provided the rover’s start and goal positions.
+
+Planner (planning.cpp):
+Implemented Planner::pathplanning using the A* algorithm. The function converts GPS coordinates into grid cells and then searches for the optimal path using cost functions (g, h, f). The resulting path is returned as a list of coordinates.
+
+Odometry (odometry.cpp):
+Implemented Odometry::computeCommands. For each step in the path, compute displacement and heading. Then, calculate the required motion parameters (total time, final angle). These are written to an output file and printed.
+
+Integration & Testing (main.cpp):
+Orchestrated the workflow: read UBX file → run path planner → compute odometry → save results.
+Verified correctness by compiling with make build and checking results with make check. Also tested using a custom UBX file to confirm proper GPS parsing and path generation.
 
 # Google Form
 [Link to Repo Submission](https://docs.google.com/forms/d/e/1FAIpQLSdlVJ2LzP8wUOATRD804zDVL611rwwGMO1y_ecYu5aoV5YQfw/viewform)
